@@ -7,6 +7,10 @@ test("API version rejects incompatible consumers and exposes frozen namespaces",
   assert.equal(requireApiVersion(1), api);
   assert.throws(() => requireApiVersion(2), /API 2 required/);
   assert.ok(Object.isFrozen(api.windows));
+  assert.ok(Object.isFrozen(api.chat));
+  for (const name of ["createManagedIdentity", "createMessageService", "bindActions", "renderChatPortrait"]) {
+    assert.equal(typeof api.chat[name], "function");
+  }
   assert.equal(api.utilities.escapeHTML('<a title="x">&\''), "&lt;a title=&quot;x&quot;&gt;&amp;&#39;");
 });
 

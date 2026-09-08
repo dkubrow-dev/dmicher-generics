@@ -1,6 +1,7 @@
 import * as windows from "./windows.js";
 import * as theme from "./theme.js";
 import * as utilities from "./utilities.js";
+import * as chat from "./chat/index.js";
 import { createModuleRegistry } from "./registry.js";
 import { createPremiumBridge } from "./premium.js";
 
@@ -15,6 +16,7 @@ export const api = Object.freeze({
   windows: Object.freeze({ ...windows }),
   theme: Object.freeze({ ...theme }),
   utilities: Object.freeze({ ...utilities }),
+  chat: Object.freeze({ ...chat }),
   modules,
   premium
 });

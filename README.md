@@ -1,12 +1,12 @@
 # dmicher Generics
 
-Общий бесплатный Foundry-модуль для семейства dmicher. Из Spotlight выделены общие стили окон, управление их жизненным циклом, экранирование HTML и последовательная очередь задач. Небольшой версионируемый реестр API позволяет модулям находить друг друга; необязательный мост Premium подключает реализации объявленных методов. Игровые правила, лицензирование и автоматизация эпизодов остаются в соответствующих модулях.
+Общий бесплатный Foundry-модуль для семейства dmicher. Из Spotlight выделены общие стили окон, управление их жизненным циклом, экранирование HTML, последовательная очередь задач, технические личности и повторяемое поведение сообщений чата. Небольшой версионируемый реестр API позволяет модулям находить друг друга; необязательный мост Premium подключает реализации объявленных методов. Игровые правила, лицензирование и автоматизация эпизодов остаются в соответствующих модулях.
 
 Начальная версия — **1.0.0**, публичный контракт — **API 1**, целевые версии Foundry VTT — **13 и 14**. Это локальная разработка: адреса релизов в манифесте предназначены для будущей публикации и не означают, что релиз уже доступен на GitHub.
 
 ## Установка и границы
 
-Устанавливаемое содержимое находится в `dmicher-generics/`; в Foundry оно помещается в `Data/modules/dmicher-generics/`. Модуль нужно включить вместе с потребителем. Он не требует Premium, системы или серверного компонента и сам не создаёт настроек, сокетов, телеметрии и элементов управления.
+Устанавливаемое содержимое находится в `dmicher-generics/`; в Foundry оно помещается в `Data/modules/dmicher-generics/`. Модуль нужно включить вместе с потребителем. Он не требует Premium, системы или серверного компонента. Импорт API не создаёт настройки, документы и элементы управления. Потребитель явно включает нужные механизмы; сервис технической личности при активации подключает обработчик сокета и освобождает его через `dispose`. Телеметрии в Generics нет.
 
 Обязательных сторонних библиотек и Foundry-модулей нет. Generics служит общей инфраструктурой dmicher. Сюда выделяется подтверждённое общее поведение с конкретным потребителем; частные функции и предметные настройки не переносятся ради формального переиспользования. Предметные интеграции и их явный выбор остаются в настройках соответствующего модуля.
 
@@ -61,6 +61,12 @@ windowTheme.dispose();
 `utilities.escapeHTML(value)` экранирует текст для HTML-контекста. Он не является валидатором URL или обработчиком произвольного CSS.
 
 `utilities.createSerialTaskQueue()` возвращает `enqueue(task)`: задачи одного экземпляра очереди выполняются по порядку, ошибка возвращается вызывающему и не ломает следующие задачи. Очередь локальна для браузера; она не выбирает ведущего GM, не обеспечивает сетевую идемпотентность и не выполняет транзакционный откат.
+
+### Чат и технические личности
+
+`generics.chat` управляет технической парой User/Actor, доставляет публичные сообщения или приватные копии, отслеживает документы по владельцу/каналу/ключу и привязывает кнопки к актуальному видимому сообщению. Он также предоставляет общий renderer портретов. Обычный НПС передаётся как явный `speaker` без создания технической личности.
+
+Тексты, заявки, опросы, настройки отображения и предметные права остаются у потребителя. Пустой приватный список никому не отправляется; автор и адресат различаются по правилам Foundry. Метки и локальная очередь не заменяют авторизацию и не гарантируют сетевое выполнение ровно один раз. Полный контракт, примеры и миграция Spotlight описаны в [docs/chat-api.md](docs/chat-api.md).
 
 ### Интеграции dmicher
 
@@ -151,4 +157,4 @@ npm run release:verify
 
 ## English summary
 
-Free, system-independent shared module for Foundry VTT 13/14. Provides scoped window CSS, per-consumer theme controllers, ApplicationV2 lifecycle helpers, HTML escaping, a local serial queue, a versioned dmicher API registry and an optional bridge for pure synchronous Premium method overrides. No Premium, socket, settings or telemetry dependency. KISS/SOLID keep domain code and licence policy in their owning modules. Version 1.0.0 / API 1; local development, not yet a published release. See the contracts and verification commands above.
+Free, system-independent shared module for Foundry VTT 13/14. Provides scoped window CSS, per-consumer theme controllers, ApplicationV2 lifecycle helpers, HTML escaping, a local serial queue, managed technical identities, explicit chat delivery and interactive controls, a versioned dmicher API registry and an optional bridge for pure synchronous Premium method overrides. No Premium or external-library dependency. Identity sockets are attached explicitly by consumers; settings and domain rules remain consumer-owned. No telemetry. KISS/SOLID keep domain code and licence policy in their owning modules. Version 1.0.0 / API 1; local development, not yet a published release. See the contracts and verification commands above.

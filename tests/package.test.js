@@ -12,11 +12,14 @@ test("manifest and source imports resolve without a game-system or Premium depen
   assert.equal(manifest.version, "1.0.0");
   assert.deepEqual(manifest.compatibility, { minimum: "13", verified: "14" });
   assert.equal(manifest.relationships, undefined);
+  assert.equal(manifest.socket, true, "The managed identity service requires Foundry's module socket channel");
   for (const name of [...manifest.esmodules, ...manifest.styles]) assert.ok(fs.existsSync(path.join(source, name)));
-  for (const name of fs.readdirSync(path.join(source, "scripts"))) {
-    const content = fs.readFileSync(path.join(source, "scripts", name), "utf8");
-    for (const match of content.matchAll(/from "(\.\/[^\"]+)"/g)) {
-      assert.ok(fs.existsSync(path.join(source, "scripts", match[1])));
+  for (const name of fs.readdirSync(path.join(source, "scripts"), { recursive: true })) {
+    const file = path.join(source, "scripts", name);
+    if (!fs.statSync(file).isFile()) continue;
+    const content = fs.readFileSync(file, "utf8");
+    for (const match of content.matchAll(/from "(\.{1,2}\/[^\"]+)"/g)) {
+      assert.ok(fs.existsSync(path.resolve(path.dirname(file), match[1])), `${name}: ${match[1]}`);
     }
   }
 });
