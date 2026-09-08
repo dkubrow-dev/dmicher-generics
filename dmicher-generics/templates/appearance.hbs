@@ -1,0 +1,16 @@
+<form class="dmicher-appearance-form">
+  <p class="notes">{{text.hint}}</p>
+  <fieldset><legend>{{text.appearance}}</legend>
+    <div class="form-group"><label for="dmicher-shared-theme">{{text.theme}}</label><div class="form-fields"><select id="dmicher-shared-theme" name="theme">{{#each themes}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div></div>
+  </fieldset>
+  <fieldset><legend>{{text.behavior}}</legend>
+    {{#each switches}}<div class="form-group"><label for="dmicher-{{key}}">{{label}}</label><div class="form-fields"><input id="dmicher-{{key}}" type="checkbox" name="{{key}}" {{#if checked}}checked{{/if}} {{#if disabled}}disabled{{/if}}></div></div>{{/each}}
+  </fieldset>
+  <fieldset><legend>{{text.custom}}</legend>
+    <div class="form-group"><label for="dmicher-custom-style">{{text.import}}</label><div class="form-fields"><input id="dmicher-custom-style" name="customStyles" type="file" accept=".css,text/css" {{#unless premiumActive}}disabled{{/unless}}></div></div>
+    <p class="notes dmicher-premium-style-message">{{premiumMessage}}</p>
+    <p class="dmicher-style-state">{{styleState}}</p>
+    <button type="button" data-appearance-action="remove-style" {{#unless hasCustom}}disabled{{/unless}}>{{text.remove}}</button>
+  </fieldset>
+  <footer><button type="button" data-appearance-action="help"><i class="fa-solid fa-circle-question"></i> {{text.help}}</button><button type="submit"><i class="fa-solid fa-save"></i> {{text.save}}</button></footer>
+</form>

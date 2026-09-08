@@ -6,7 +6,7 @@
   "authors": [{ "name": "dmicher abathur kubrow" }],
   "compatibility": { "minimum": "13", "verified": "14" },
   "esmodules": ["scripts/dmicher-generics.js"],
-  "styles": ["styles/dmicher-generics.css"],
+  "styles": ["styles/dmicher-generics.css", "styles/help.css", "styles/appearance.css"],
   "socket": true,
   "url": "https://github.com/dkubrow-dev/dmicher-generics",
   "manifest": "https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json",
