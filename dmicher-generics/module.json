@@ -1,0 +1,16 @@
+{
+  "id": "dmicher-generics",
+  "title": "dmicher Generics | Общие инструменты",
+  "description": "Shared window styles, lifecycle helpers and versioned module API discovery for the dmicher module family. No game system or Premium dependency.",
+  "version": "1.0.0",
+  "authors": [{ "name": "dmicher abathur kubrow" }],
+  "compatibility": { "minimum": "13", "verified": "14" },
+  "esmodules": ["scripts/dmicher-generics.js"],
+  "styles": ["styles/dmicher-generics.css"],
+  "url": "https://github.com/dkubrow-dev/dmicher-generics",
+  "manifest": "https://github.com/dkubrow-dev/dmicher-generics/releases/latest/download/module.json",
+  "download": "https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/dmicher-generics-1.0.0.zip",
+  "readme": "https://github.com/dkubrow-dev/dmicher-generics/blob/main/README.md",
+  "changelog": "https://github.com/dkubrow-dev/dmicher-generics/releases/tag/1.0.0",
+  "bugs": "https://github.com/dkubrow-dev/dmicher-generics/issues"
+}

@@ -1,0 +1,6 @@
+.resources/
+.sources/
+node_modules/
+.vs/
+.DS_Store
+*.log

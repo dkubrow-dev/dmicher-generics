@@ -1,0 +1,12 @@
+{
+  "name": "dmicher-generics-development",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "release:build": "node scripts/release.mjs build",
+    "deploy:dry-run": "node scripts/release.mjs dry-run",
+    "deploy": "node scripts/release.mjs deploy",
+    "release:verify": "node scripts/release.mjs verify"
+  }
+}
