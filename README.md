@@ -8,6 +8,10 @@
 
 Устанавливаемое содержимое находится в `dmicher-generics/`; в Foundry оно помещается в `Data/modules/dmicher-generics/`. Модуль нужно включить вместе с потребителем. Он не требует Premium, системы или серверного компонента и сам не создаёт настроек, сокетов, телеметрии и элементов управления.
 
+Обязательных сторонних библиотек и Foundry-модулей нет. Generics служит общей инфраструктурой dmicher; расширение общей библиотеки предпочтительнее копирования одинаковых методов в потребителей. Предметные интеграции и их явный выбор остаются в настройках соответствующего модуля.
+
+Манифест версии1.0.0: `https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json`. Это предполагаемый адрес конкретного релиза. Поле `manifest` одинаково в исходниках, отдельном артефакте и ZIP; сборка отвергает `latest`, другой номер релиза и несогласованный `download`.
+
 Обновлённый Spotlight использует обязательную зависимость от Generics. Premium по-прежнему необязателен: бесплатные функции Spotlight не зависят от лицензии. Master screen может использовать тот же контракт без импорта логики Spotlight.
 
 ## Подключение API
@@ -19,7 +23,7 @@ import { requireApiVersion } from "../../dmicher-generics/scripts/api.js";
 const generics = requireApiVersion(1);
 ```
 
-Такой импорт работает до Foundry `init` и не зависит от порядка вызова обработчиков `init`. На `init` тот же объект публикуется в `game.modules.get("dmicher-generics").api`, затем вызывается hook `dmicherGenericsReady(api)`. `requireApiVersion` немедленно сообщает о несовместимом основном контракте. Добавляйте `dmicher-generics` в `relationships.requires` манифеста потребителя с `minimum: "1.0.0"`.
+Такой импорт работает до Foundry `init` и не зависит от порядка вызова обработчиков `init`. На `init` тот же объект публикуется в `game.modules.get("dmicher-generics").api`, затем вызывается hook `dmicherGenericsReady(api)`. `requireApiVersion` немедленно сообщает о несовместимом основном контракте. Добавляйте `dmicher-generics` в `relationships.requires` манифеста потребителя с `minimum: "1.0.0"` и точным манифестом `https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json`.
 
 ### Окна и темы
 

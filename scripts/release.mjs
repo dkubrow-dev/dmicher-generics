@@ -15,8 +15,10 @@ assert.equal(manifest.id, moduleId);
 assert.match(version, /^\d+\.\d+\.\d+$/);
 assert.equal(manifest.compatibility.minimum, "13");
 assert.equal(manifest.compatibility.verified, "14");
-assert.ok(manifest.download.endsWith("/" + version + "/" + moduleId + "-" + version + ".zip"));
-assert.ok(manifest.changelog.endsWith("/" + version));
+const releaseRoot = "https://github.com/dkubrow-dev/" + moduleId + "/releases/";
+assert.equal(manifest.manifest, releaseRoot + "download/" + version + "/module.json", "Manifest URL must identify this exact release");
+assert.equal(manifest.download, releaseRoot + "download/" + version + "/" + moduleId + "-" + version + ".zip", "Download URL must identify this exact release");
+assert.equal(manifest.changelog, releaseRoot + "tag/" + version);
 const output = path.resolve(repo, "..", "artifacts", moduleId, version);
 const archiveName = moduleId + "-" + version + ".zip";
 const targets = [
@@ -96,6 +98,7 @@ function verifyInstalled(expected) {
 function verifyArchive() {
   const archive = fs.readFileSync(path.join(output, archiveName));
   const entries = readZip(archive), expected = sourceSnapshot();
+  assert.deepEqual(entries.get("module.json"), manifestBytes, "ZIP manifest differs from source manifest");
   assert.deepEqual([...entries.keys()].sort(), expected.map(file => file.name), "ZIP must contain only module files at its root");
   for (const file of expected) assert.equal(digest(entries.get(file.name)), file.sha256, "ZIP content mismatch: " + file.name);
   assert.deepEqual(fs.readFileSync(path.join(output, "module.json")), manifestBytes, "Published manifest mismatch");
