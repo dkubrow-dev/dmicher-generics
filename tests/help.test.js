@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { normalizeHelpContent, renderHelpLayout, clampNavigationWidth, createHelpApplication } from "../dmicher-generics/scripts/help/index.js";
 
 const content = (owner = "one") => ({
-  pages: [{ id: "start", title: `${owner} <start>`, html: '<section id="setting">Steps</section>' }, { id: "author", title: "Author", html: owner }, { id: "thanks", title: "Thanks", html: owner }, { id: "premium", title: "Premium", html: owner }],
+  pages: [{ id: "start", title: `${owner} <start>`, html: '<section id="setting">Steps</section>' }, { id: "author", title: "Author", html: owner }, { id: "thanks", title: "Thanks", html: owner }, { id: "modules", title: "Premium", html: owner }],
   tree: [{ id: "tasks", title: "Tasks", children: [{ id: "nested", title: "Nested", children: [{ id: "first", title: "Start", pageId: "start" }] }] }],
-  footer: ["author", "thanks", "premium"], labels: { contents: "Contents", resizeNavigation: "Resize navigation" }
+  footer: ["author", "thanks", "modules"], labels: { contents: "Contents", resizeNavigation: "Resize navigation" }
 });
 
 test("help requires consumer-owned footer pages and rejects broken page references", () => {
@@ -22,9 +22,23 @@ test("nested tree reveals current page, escapes labels and keeps footer outside 
   assert.match(html, /one &lt;start&gt;/);
   const footer = html.slice(html.indexOf('class="dmicher-help-footer"'));
   assert.ok(footer.indexOf('data-help-page="author"') < footer.indexOf('data-help-page="thanks"'));
-  assert.ok(footer.indexOf('data-help-page="thanks"') < footer.indexOf('data-help-page="premium"'));
+  assert.ok(footer.indexOf('data-help-page="thanks"') < footer.indexOf('data-help-page="modules"'));
   assert.match(html, /role="separator" tabindex="0"/);
   assert.match(html, /<section id="setting">Steps<\/section>/);
+});
+
+test("legacy Premium footer and old deep links remain readable as the modules page", async () => {
+  const old = content(); old.footer[2] = "premium"; old.pages.at(-1).id = "premium";
+  const normalized = normalizeHelpContent(old);
+  assert.deepEqual(normalized.footer, ["author", "thanks", "modules"]);
+  assert.equal(normalized.pages.get("modules").html, "one");
+  class Application { async render() { return this; } bringToFront() {} }
+  const previous = globalThis.foundry;
+  globalThis.foundry = { applications: { api: { ApplicationV2: Application } } };
+  try {
+    const Help = createHelpApplication({ id: "legacy", getContent: () => content() });
+    const help = new Help(); assert.equal(await help.navigate("premium"), true); assert.equal(help.activePage, "modules");
+  } finally { globalThis.foundry = previous; }
 });
 
 test("navigation bounds preserve room for content in a narrow window", () => {

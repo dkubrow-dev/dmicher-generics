@@ -64,9 +64,9 @@ test("Generics help provides matching RU and EN page IDs, footer pages and every
     globalThis.game.i18n.lang = "en"; const en = appearanceHelpContent();
     assert.deepEqual(ru.pages.map((page) => page.id), en.pages.map((page) => page.id));
     for (const content of [ru, en]) {
-      assert.deepEqual(content.footer, ["author", "thanks", "premium"]);
+      assert.deepEqual(content.footer, ["author", "thanks", "modules"]);
       const html = content.pages.find((page) => page.id === "settings").html;
-      for (const key of ["theme", "snapScreen", "snapWindows", "snapCorners", "snapCenters", "customStyles"]) assert.ok(html.includes(`id="${key}"`));
+      for (const key of ["theme", "snapScreen", "snapWindows", "snapCorners", "snapCenters", "snapCascadeRightButton", "customStyles"]) assert.ok(html.includes(`id="${key}"`));
     }
   } finally { globalThis.game = prior; }
 });

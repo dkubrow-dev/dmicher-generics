@@ -1,20 +1,22 @@
 import { escapeHTML } from "../utilities.js";
 import { getRenderedElement, runAfterApplicationLifecycle } from "../windows.js";
 
-const FOOTER_IDS = Object.freeze(["author", "thanks", "premium"]);
+const FOOTER_IDS = Object.freeze(["author", "thanks", "modules"]);
 const identifier = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
 
 /** Consumer-owned, trusted help content. This API does not load or execute page scripts. */
 export function normalizeHelpContent(content) {
   const pages = new Map();
-  for (const page of content?.pages ?? []) {
+  const legacyFooter = content?.footer?.[2] === "premium" || (!(content?.pages ?? []).some((page) => page.id === "modules") && (content?.pages ?? []).some((page) => page.id === "premium"));
+  for (const source of content?.pages ?? []) {
+    const page = legacyFooter && source.id === "premium" ? { ...source, id: "modules" } : source;
     if (typeof page.id !== "string" || !identifier.test(page.id) || pages.has(page.id)) throw new Error(`Invalid or duplicate help page: ${page.id}`);
     pages.set(page.id, { ...page, title: String(page.title ?? page.id), html: String(page.html ?? "") });
   }
   if (!pages.size) throw new Error("Help requires at least one page");
-  const footer = content.footer ?? FOOTER_IDS;
+  const footer = content.footer?.map((id) => legacyFooter && id === "premium" ? "modules" : id) ?? FOOTER_IDS;
   if (!Array.isArray(footer) || footer.length !== 3 || FOOTER_IDS.some((id, index) => footer[index] !== id || !pages.has(id))) {
-    throw new Error("Help requires consumer-owned author, thanks and premium footer pages");
+    throw new Error("Help requires consumer-owned author, thanks and modules footer pages");
   }
   const seen = new Set();
   const visit = (nodes) => (nodes ?? []).map((node) => {
@@ -156,6 +158,7 @@ export function createHelpApplication({ id, title, classes = [], getContent, ini
 
     async navigate(pageId, anchor) {
       const content = normalizeHelpContent(await getContent());
+      if (pageId === "premium" && !content.pages.has(pageId)) pageId = "modules";
       if (!content.pages.has(pageId)) return false;
       this.activePage = pageId;
       this.pendingAnchor = typeof anchor === "string" ? anchor : null;
@@ -180,15 +183,26 @@ export function bindSettingHelp(html, { open, entries = [] } = {}) {
   const created = [];
   for (const entry of entries) {
     for (const input of root.querySelectorAll(entry.selector)) {
-      const container = input.closest("label") ?? input.closest(".form-group")?.querySelector("label") ?? input.parentElement?.querySelector(":scope > label") ?? input.parentElement;
+      const control = input.matches('button, [role="button"], input[type="button"], input[type="submit"]') ? input
+        : input.closest('label[role="button"], label[data-dmicher-help-overlay]');
+      let container = control?.parentElement?.classList.contains("dmicher-setting-help-control") ? control.parentElement
+        : control ?? input.closest("label") ?? input.closest(".form-group")?.querySelector("label") ?? input.parentElement?.querySelector(":scope > label") ?? input.parentElement;
       if (!container) continue;
       const key = `${entry.pageId}#${entry.anchor ?? ""}`;
       if ([...container.querySelectorAll("[data-dmicher-setting-help]")].some((button) => button.dataset.dmicherSettingHelp === key)) continue;
+      let wrapper;
+      if (control && container === control) {
+        wrapper = root.ownerDocument.createElement("span"); wrapper.className = "dmicher-setting-help-control";
+        const style = root.ownerDocument.defaultView.getComputedStyle(control);
+        wrapper.style.flex = style.flex;
+        control.before(wrapper); wrapper.append(control); container = wrapper;
+      }
       // A link remains usable inside a disabled fieldset, so locked settings still explain themselves.
       const button = root.ownerDocument.createElement("a");
       button.href = "#";
       button.setAttribute("role", "button");
       button.className = "dmicher-setting-help";
+      if (control) button.classList.add("dmicher-setting-help-overlay");
       button.dataset.dmicherSettingHelp = key;
       button.title = String(entry.hint ?? "");
       button.setAttribute("aria-label", String(entry.label ?? entry.hint ?? entry.pageId));
@@ -200,6 +214,13 @@ export function bindSettingHelp(html, { open, entries = [] } = {}) {
       button.addEventListener("click", listener);
       const keyListener = (event) => { if (event.key === " ") listener(event); };
       button.addEventListener("keydown", keyListener);
+      const stopPointer = (event) => { event.preventDefault(); event.stopPropagation(); };
+      button.addEventListener("pointerdown", stopPointer);
+      if (control) {
+        container.append(button);
+        created.push({ button, listener, keyListener, stopPointer, wrapper, control });
+        continue;
+      }
       let caption = [...container.children].find((child) => child.tagName === "SPAN" && !child.querySelector("input,select,textarea,button"));
       if (!caption) {
         const textNodes = [...container.childNodes].filter((node) => node.nodeType === 3 && node.textContent.trim());
@@ -211,8 +232,11 @@ export function bindSettingHelp(html, { open, entries = [] } = {}) {
       }
       if (caption) caption.append(button);
       else container.append(button);
-      created.push({ button, listener, keyListener });
+      created.push({ button, listener, keyListener, stopPointer });
     }
   }
-  return () => { for (const { button, listener, keyListener } of created.splice(0)) { button.removeEventListener("click", listener); button.removeEventListener("keydown", keyListener); button.remove(); } };
+  return () => { for (const { button, listener, keyListener, stopPointer, wrapper, control } of created.splice(0)) {
+    button.removeEventListener("click", listener); button.removeEventListener("keydown", keyListener); button.removeEventListener("pointerdown", stopPointer); button.remove();
+    if (wrapper?.parentElement && wrapper.contains(control)) { wrapper.before(control); wrapper.remove(); }
+  } };
 }

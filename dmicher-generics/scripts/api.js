@@ -3,6 +3,7 @@ import * as theme from "./theme.js";
 import * as utilities from "./utilities.js";
 import * as chat from "./chat/index.js";
 import * as help from "./help/index.js";
+import * as components from "./components.js";
 import { createModuleRegistry } from "./registry.js";
 import { createPremiumBridge } from "./premium.js";
 import { createAppearanceController } from "./appearance.js";
@@ -21,6 +22,7 @@ export const api = Object.freeze({
   utilities: Object.freeze({ ...utilities }),
   chat: Object.freeze({ ...chat }),
   help: Object.freeze({ ...help }),
+  components: Object.freeze({ ...components }),
   appearance,
   modules,
   premium

@@ -5,8 +5,8 @@ import { appearanceText, appearanceHelpContent } from "./appearance-content.js";
 import { prepareCustomStyles, MAX_CUSTOM_STYLE_BYTES } from "./custom-styles.js";
 
 const MODULE_ID = "dmicher-generics";
-const SWITCHES = ["snapScreen", "snapWindows", "snapCorners", "snapCenters"];
-const DEFAULTS = { theme: "dark", snapScreen: true, snapWindows: true, snapCorners: true, snapCenters: true, customStyles: "", appearanceInitialized: false };
+const SWITCHES = ["snapScreen", "snapWindows", "snapCorners", "snapCenters", "snapCascadeRightButton"];
+const DEFAULTS = { theme: "dark", snapScreen: true, snapWindows: true, snapCorners: true, snapCenters: true, snapCascadeRightButton: true, customStyles: "", appearanceInitialized: false };
 
 export function createAppearanceController({ premium, help }) {
   const extension = premium.forModule(MODULE_ID, { apiVersion: 1, methods: ["resolveCustomStyles"] });
@@ -17,7 +17,7 @@ export function createAppearanceController({ premium, help }) {
   const read = (key) => { try { return globalThis.game?.settings?.get(MODULE_ID, key) ?? DEFAULTS[key]; } catch { return DEFAULTS[key]; } };
   const getTheme = () => normalizeTheme(read("theme"));
   const windowTheme = createWindowThemeController({ windowClass: "dmicher-window", getTheme });
-  const snap = createWindowSnapController({ getSettings: () => ({ screen: read("snapScreen"), windows: read("snapWindows"), corners: read("snapCorners"), centers: read("snapCenters") }) });
+  const snap = createWindowSnapController({ getSettings: () => ({ screen: read("snapScreen"), windows: read("snapWindows"), corners: read("snapCorners"), centers: read("snapCenters"), cascadeRightButton: read("snapCascadeRightButton") }) });
   const getCustomStyles = () => extension.invoke("resolveCustomStyles", [read("customStyles")], () => "",
     (value) => typeof value === "string" && new TextEncoder().encode(value).length <= MAX_CUSTOM_STYLE_BYTES);
 
@@ -43,6 +43,7 @@ export function createAppearanceController({ premium, help }) {
   }
 
   function apply() {
+    snap.refresh();
     windowTheme.apply();
     let css = "";
     const raw = getCustomStyles();
@@ -133,7 +134,9 @@ export function createAppearanceController({ premium, help }) {
             if (this.customDraft !== undefined && (!this.customDraft || extension.getStatus().active)) values.customStyles = this.customDraft;
             for (const [key, value] of Object.entries(values)) await game.settings.set(MODULE_ID, key, value);
             await game.settings.set(MODULE_ID, "appearanceInitialized", true);
-            apply(); globalThis.ui?.notifications?.info(text.saved); await this.close();
+            apply(); globalThis.ui?.notifications?.info(text.saved);
+            // Keep the form and its in-flight edits intact; a later save must not reuse an old import.
+            if (Object.hasOwn(values, "customStyles") && this.customDraft === values.customStyles) this.customDraft = undefined;
           } catch { globalThis.ui?.notifications?.error(text.failed); }
           finally { this.busy = false; saveButton.disabled = false; }
         }, { signal });
@@ -159,6 +162,7 @@ export function createAppearanceController({ premium, help }) {
 
   return Object.freeze({
     getTheme, getCustomStyles, openHelp, apply, registerSettings,
+    getWindowLayout: () => snap.getLayout(),
     getSettings: () => Object.fromEntries(Object.keys(DEFAULTS).map((key) => [key, read(key)])),
     adoptLegacyTheme(value, priority = 0) {
       if (!["dark", "light"].includes(value) || read("appearanceInitialized")) return false;

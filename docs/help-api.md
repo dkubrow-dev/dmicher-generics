@@ -15,13 +15,13 @@ const HelpApplication = generics.help.createHelpApplication({
       { id: "start", title: "Prepare for play", html: '<section id="participants">...</section>' },
       { id: "author", title: "Author", html: "..." },
       { id: "thanks", title: "Thanks", html: "..." },
-      { id: "premium", title: "Premium", html: "..." }
+      { id: "modules", title: "dmicher modules", html: "..." }
     ],
     tree: [{
       id: "prepare", title: "Preparation",
       children: [{ id: "start", pageId: "start", title: "Prepare for play" }]
     }],
-    footer: ["author", "thanks", "premium"],
+    footer: ["author", "thanks", "modules"],
     labels: { contents: "Help contents", resizeNavigation: "Resize navigation" }
   })
 });
@@ -52,5 +52,9 @@ const disposeHelp = generics.help.bindSettingHelp(form, {
 ```
 
 The helper appends a question icon beside the setting caption. It preserves field values and does not change the consumer's permissions. The native tooltip uses `hint`; click opens the supplied page and section. `label` optionally gives a localized accessible name. Links remain usable inside disabled fieldsets so locked options can explain themselves. Repeated binding skips an already present target in the same label. Call the returned, idempotent disposer before rerendering or closing an owning application.
+
+For a button setting, the helper creates a small overlay at its top-left corner instead of adding a sibling to the button row. A positioning wrapper preserves the button's flex size. The question itself is a sibling of the control, not a nested interactive button; its click and pointer press never reach the underlying control. Toggle-like checkbox labels may opt in with `data-dmicher-help-overlay` or `role="button"`. Text labels retain an inline question. Question icons have no underline, including hover and inherited text styles. Disposal restores the original control location.
+
+The final footer page is `modules` and describes the suite in the consumer's own content. Existing `premium` footer definitions and `navigate("premium")` are accepted as a compatibility alias for `modules`; new content must use the new ID. No suite page content is injected by Generics.
 
 Help must be available in Russian and English, updated alongside functionality, brief and written around useful table actions. Explain important settings individually in a separate section: visible name, meaning and expected behavior. Help pages contain operating instructions; implementation and architecture belong in repository documentation such as this file.

@@ -122,7 +122,7 @@ try {
           footerBottom: footer.getBoundingClientRect().bottom, navBottom: nav.getBoundingClientRect().bottom,
           labels: [...root.querySelectorAll("nav,[role=separator]")].map(el => el.getAttribute("aria-label")) };
       });
-      assert.equal(layout.overflow, false); assert.deepEqual(layout.footer, ["author", "thanks", "premium"]);
+      assert.equal(layout.overflow, false); assert.deepEqual(layout.footer, ["author", "thanks", "modules"]);
       assert.ok(layout.footerBottom <= layout.navBottom && layout.footerBottom > layout.navBottom - 20);
       assert.ok(layout.labels.every(Boolean), `${name} missing navigation labels`);
       const internal = page.locator(".dmicher-help-page a[data-help-page]").first();
@@ -146,8 +146,8 @@ try {
       assert.equal(await page.evaluate(() => currentHelp.navigationWidth), 290);
       await page.locator(".dmicher-help-divider").focus(); await page.keyboard.press("Home");
       assert.equal(await page.evaluate(() => currentHelp.navigationWidth), 140);
-      await page.locator('[data-help-page="premium"]').click(); await page.evaluate(() => currentHelp.pending);
-      assert.equal(await page.evaluate(() => currentHelp.activePage), "premium");
+      await page.locator('[data-help-page="modules"]').click(); await page.evaluate(() => currentHelp.pending);
+      assert.equal(await page.evaluate(() => currentHelp.activePage), "modules");
       const settingState = await page.evaluate(() => { settingDisposer(); return document.querySelectorAll(".qa-setting .dmicher-setting-help").length; });
       assert.equal(settingState, 0);
       await page.evaluate(async () => { document.querySelector(".qa-setting")?.remove(); currentHelp.navigationWidth = 230; await currentHelp.navigate(currentHelp.options.id.endsWith("screen") ? "constructor" : currentHelp.options.id.endsWith("generics") ? "settings" : "overview"); });
@@ -174,9 +174,30 @@ try {
     assert.equal(await page.locator('[name="customStyles"]').isEnabled(), true);
     await page.locator('[name="customStyles"]').setInputFiles({ name: "qa.css", mimeType: "text/css", buffer: Buffer.from(".window-content { border-left: 3px solid rgb(120, 80, 40); }") });
     await page.waitForFunction(() => settingsApp.customDraft?.includes("border-left"));
-    await page.locator('button[type="submit"]').click(); await page.waitForFunction(() => !settingsApp.rendered);
+    await page.locator('button[type="submit"]').click(); await page.waitForFunction(() => !settingsApp.busy && game.settings.get("dmicher-generics", "customStyles"));
+    assert.equal(await page.evaluate(() => settingsApp.rendered), true, "Save must leave the appearance form open");
+    assert.equal(await page.locator('[name="snapScreen"]').isChecked(), true);
+    assert.equal(await page.locator('[name="snapWindows"]').isChecked(), false);
+    assert.equal(await page.locator('[name="snapCascadeRightButton"]').isChecked(), true);
     assert.deepEqual(await page.evaluate(() => [game.settings.get("dmicher-generics", "snapScreen"), game.settings.get("dmicher-generics", "snapWindows")]), [true, false]);
     assert.ok(await page.locator("style[data-dmicher-custom-style]").textContent());
+    // Delay a real Save handler, then edit the still-open form while it is writing.
+    await page.evaluate(() => {
+      const set = game.settings.set; let release; const wait = new Promise(resolve => release = resolve);
+      window.releaseSave = () => { game.settings.set = set; release(); };
+      game.settings.set = async (...args) => { if (args[1] === "theme") await wait; return set(...args); };
+    });
+    await page.locator('button[type="submit"]').click(); await page.waitForFunction(() => settingsApp.busy);
+    await page.locator('[name="snapWindows"]').check();
+    await page.locator('[name="customStyles"]').setInputFiles({ name: "next.css", mimeType: "text/css", buffer: Buffer.from(".window-content { border-right: 2px solid blue; }") });
+    await page.waitForFunction(() => settingsApp.customDraft?.includes("border-right"));
+    await page.evaluate(() => releaseSave()); await page.waitForFunction(() => !settingsApp.busy);
+    assert.equal(await page.locator('[name="snapWindows"]').isChecked(), true, "Edits made while saving must remain in the form");
+    assert.equal(await page.evaluate(() => game.settings.get("dmicher-generics", "snapWindows")), false, "The first Save writes its own snapshot");
+    assert.ok(await page.evaluate(() => settingsApp.customDraft.includes("border-right")), "A newer CSS draft must survive a pending Save");
+    await page.locator('button[type="submit"]').click(); await page.waitForFunction(() => !settingsApp.busy && game.settings.get("dmicher-generics", "snapWindows"));
+    assert.ok(await page.evaluate(() => game.settings.get("dmicher-generics", "customStyles").includes("border-right")));
+    assert.equal(await page.evaluate(() => settingsApp.rendered), true);
     await page.evaluate(() => fakePremium.setActive(false)); assert.equal(await page.locator("style[data-dmicher-custom-style]").count(), 0);
     await page.evaluate(() => fakePremium.setActive(true)); assert.equal(await page.locator("style[data-dmicher-custom-style]").count(), 1);
     await page.evaluate(() => appearance.dispose());

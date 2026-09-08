@@ -23,3 +23,7 @@
 .dmicher-help-page :target { outline: 1px solid var(--dmicher-accent, #cfaa70); }
 .dmicher-setting-help { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 22px; height: 22px; min-height: 22px; padding: 0; margin: 0 0 0 5px; border: 0; background: transparent; color: var(--dmicher-accent, inherit); box-shadow: none; cursor: help; }
 .dmicher-setting-help:hover, .dmicher-setting-help:focus-visible { outline: 1px solid currentColor; }
+.dmicher-window a.dmicher-setting-help, .dmicher-window a.dmicher-setting-help * { text-decoration: none !important; font-style: normal; font-weight: normal; text-shadow: none; }
+.dmicher-setting-help-control { position: relative; display: inline-flex; align-items: stretch; min-width: 0; vertical-align: middle; }
+.dmicher-setting-help-control > button { flex: 1 1 auto; }
+.dmicher-window a.dmicher-setting-help-overlay { position: absolute; z-index: 2; top: -6px; left: -6px; width: 16px; height: 16px; min-height: 16px; margin: 0; padding: 0; line-height: 1; font-size: 12px; border-radius: 50%; background: var(--dmicher-surface-bg, #27241e); }
