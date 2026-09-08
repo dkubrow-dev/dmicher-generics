@@ -1,7 +1,7 @@
 {
   "id": "dmicher-generics",
   "title": "dmicher Generics | Общие инструменты",
-  "description": "Shared window styles, lifecycle helpers and versioned module API discovery for the dmicher module family. No game system or Premium dependency.",
+  "description": "Shared window styles, lifecycle helpers, versioned module discovery and an optional Premium method bridge for dmicher modules. No game system or Premium dependency.",
   "version": "1.0.0",
   "authors": [{ "name": "dmicher abathur kubrow" }],
   "compatibility": { "minimum": "13", "verified": "14" },

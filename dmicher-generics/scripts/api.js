@@ -2,9 +2,11 @@ import * as windows from "./windows.js";
 import * as theme from "./theme.js";
 import * as utilities from "./utilities.js";
 import { createModuleRegistry } from "./registry.js";
+import { createPremiumBridge } from "./premium.js";
 
 export const MODULE_ID = "dmicher-generics";
 export const API_VERSION = 1;
+export const premium = createPremiumBridge();
 export const modules = createModuleRegistry({
   onChange: (event, record) => globalThis.Hooks?.callAll?.("dmicherModuleRegistryChanged", event, record)
 });
@@ -13,7 +15,8 @@ export const api = Object.freeze({
   windows: Object.freeze({ ...windows }),
   theme: Object.freeze({ ...theme }),
   utilities: Object.freeze({ ...utilities }),
-  modules
+  modules,
+  premium
 });
 
 export function requireApiVersion(version) {

@@ -1,6 +1,6 @@
 # dmicher Generics
 
-Общий бесплатный Foundry-модуль для семейства dmicher. Из Spotlight выделены общие стили окон, управление их жизненным циклом, экранирование HTML и последовательная очередь задач. Добавлен небольшой версионируемый реестр API, через который модули находят друг друга. Игровые правила, лицензирование и автоматизация эпизодов остаются в соответствующих модулях.
+Общий бесплатный Foundry-модуль для семейства dmicher. Из Spotlight выделены общие стили окон, управление их жизненным циклом, экранирование HTML и последовательная очередь задач. Небольшой версионируемый реестр API позволяет модулям находить друг друга; необязательный мост Premium подключает реализации объявленных методов. Игровые правила, лицензирование и автоматизация эпизодов остаются в соответствующих модулях.
 
 Начальная версия — **1.0.0**, публичный контракт — **API 1**, целевые версии Foundry VTT — **13 и 14**. Это локальная разработка: адреса релизов в манифесте предназначены для будущей публикации и не означают, что релиз уже доступен на GitHub.
 
@@ -8,11 +8,13 @@
 
 Устанавливаемое содержимое находится в `dmicher-generics/`; в Foundry оно помещается в `Data/modules/dmicher-generics/`. Модуль нужно включить вместе с потребителем. Он не требует Premium, системы или серверного компонента и сам не создаёт настроек, сокетов, телеметрии и элементов управления.
 
-Обязательных сторонних библиотек и Foundry-модулей нет. Generics служит общей инфраструктурой dmicher; расширение общей библиотеки предпочтительнее копирования одинаковых методов в потребителей. Предметные интеграции и их явный выбор остаются в настройках соответствующего модуля.
+Обязательных сторонних библиотек и Foundry-модулей нет. Generics служит общей инфраструктурой dmicher. Сюда выделяется подтверждённое общее поведение с конкретным потребителем; частные функции и предметные настройки не переносятся ради формального переиспользования. Предметные интеграции и их явный выбор остаются в настройках соответствующего модуля.
 
 Манифест версии1.0.0: `https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json`. Это предполагаемый адрес конкретного релиза. Поле `manifest` одинаково в исходниках, отдельном артефакте и ZIP; сборка отвергает `latest`, другой номер релиза и несогласованный `download`.
 
-Обновлённый Spotlight использует обязательную зависимость от Generics. Premium по-прежнему необязателен: бесплатные функции Spotlight не зависят от лицензии. Master screen может использовать тот же контракт без импорта логики Spotlight.
+Обновлённые Spotlight и Premium требуют только Generics как общую инфраструктуру. Premium остаётся необязательным для Spotlight: бесплатные функции не зависят от лицензии. Master screen может использовать тот же контракт без импорта логики Spotlight. Generics ничего не импортирует из продуктовых модулей или Premium; циклической зависимости нет.
+
+Применяем KISS и SOLID: небольшие тематические части, конкретная ответственность, узкие версионируемые договоры и совместимые расширения. Generics объединяет оформление и технические способы взаимодействия. Он не содержит каталог премиальных функций, настройки целевых модулей или правила лицензирования. Полные общие правила находятся в родительском `AGENTS.md`.
 
 ## Подключение API
 
@@ -79,7 +81,57 @@ const available = generics.modules.list();
 
 Реестр предназначен для обнаружения методов, а не для выдачи прав. Каждый метод самостоятельно проверяет права пользователя, доступ Premium и состояние мира. В реестр нельзя публиковать секреты; найденные возможности не запускаются автоматически. Адаптеры сторонних модулей, бизнес-правила и интерфейс осознанного выбора исполнителя относятся к Master screen.
 
-Spotlight сохраняет `dmicherSpotlightReady`, прежний объект `game.modules.get(...).api` и Premium provider API; дополнительно регистрирует API 1 и возможности открытия своих основных окон. Существующим интеграциям не нужно менять прежние вызовы.
+Spotlight сохраняет `dmicherSpotlightReady`, API открытия инструментов и их регистрацию в API 1. Прежняя прямая регистрация Premium-провайдера в Spotlight удалена: соединение проходит только через описанный ниже мост. Обновлённые Generics, Premium и Spotlight устанавливаются согласованным комплектом.
+
+### Премиальные реализации методов
+
+`generics.premium` — технический мост протокола 1. Базовый модуль объявляет используемые методы и предоставляет законченные бесплатные реализации. Premium хранит и регистрирует тематические расширения; он же проверяет доступ. Generics не решает, какие функции платные, и не читает лицензионные данные.
+
+```js
+const client = generics.premium.forModule("dmicher-example", {
+  apiVersion: 1,
+  methods: ["resolveOptions"]
+});
+const base = (stored) => ({ label: stored.label, compact: false });
+const effective = client.invoke("resolveOptions", [stored], base,
+  (value) => Boolean(value && typeof value.compact === "boolean"));
+const unsubscribe = client.subscribe((status) => refreshConfiguration(status));
+await client.waitUntilReady();
+// Явная команда открытия настроек, права проверяет сам Premium:
+client.openSettings();
+// При освобождении клиента:
+unsubscribe();
+```
+
+Единственный провайдер подключается из Premium. Следующий пример показывает договор; `verifiedAccess`, `readyPromise` и `openLicenseSettings` предоставляет собственная инфраструктура Premium.
+
+```js
+const registration = generics.premium.registerProvider({
+  apiVersion: 1,
+  readyPromise,
+  hasAccess: (moduleId) => verifiedAccess(moduleId),
+  openSettings: openLicenseSettings,
+  extensions: [{
+    moduleId: "dmicher-example",
+    apiVersion: 1,
+    methods: {
+      resolveOptions: (base, stored) => ({ ...base(stored), compact: Boolean(stored.compact) })
+    }
+  }]
+});
+// После изменения подтверждённого состояния доступа:
+registration.notifyChanged();
+// При отключении провайдера:
+registration.dispose();
+```
+
+`invoke` применим только к чистым синхронным вычислениям. Базовый метод заранее вычисляет независимое значение для fallback, поэтому не должен иметь побочных эффектов; повторный вызов из расширения также создаёт самостоятельный результат. Потребитель защищает входные данные, нормализует результат и ограничивает разрешённые для замены поля. Через этот метод нельзя проводить создание документов, покупки, воспроизведение звука или другие команды: автоматическое возвращение базового результата не отменяет уже произошедшие последствия.
+
+Отсутствие провайдера, несовпадение версии/набора методов, отказ доступа дают бесплатный результат. Доступ проверяется при каждом обращении. Исключение, Promise или результат, отклонённый валидатором, отключают расширение данного целевого контракта до `notifyChanged`; другие цели независимы. Ошибка базового метода остаётся ошибкой потребителя. Административная команда `openSettings` выполняется только явно, возвращает `null` при отсутствии и передаёт ошибку провайдера вызывающему без повторения другой команды.
+
+`getStatus()` различает `available`, `compatible`, `active` и `settingsAvailable`. Один статус не является премиальной реализацией. Действия одного целевого модуля и версии контракта разделяют предел ожидания готовности (по умолчанию 50 секунд); другой модуль имеет самостоятельный срок. Отказ запуска, тайм-аут и снятие провайдера освобождают ожидание. Регистрация не зависит от существования целевого модуля. Подписки освобождаются по выданной функции; старая регистрация не может снять новую. Это локальная координация, а не граница безопасности между произвольными скриптами клиента.
+
+Версия основного API остаётся 1: существующие пространства имён сохранены, `premium` добавлен к ним. Код лицензирования, список целевых расширений и игровые модели не входят в Generics.
 
 ## Разработка и проверка
 
@@ -99,4 +151,4 @@ npm run release:verify
 
 ## English summary
 
-Free, system-independent shared module for Foundry VTT 13/14. Provides scoped window CSS, per-consumer theme controllers, ApplicationV2 lifecycle helpers, HTML escaping, a client-local serial queue, and an opt-in versioned dmicher API registry. No Premium, socket, settings or telemetry dependency. Version 1.0.0 / API 1; local development, not yet a published release. Consumers retain game rules, permissions, settings and UI content. See the API examples and verification commands above.
+Free, system-independent shared module for Foundry VTT 13/14. Provides scoped window CSS, per-consumer theme controllers, ApplicationV2 lifecycle helpers, HTML escaping, a local serial queue, a versioned dmicher API registry and an optional bridge for pure synchronous Premium method overrides. No Premium, socket, settings or telemetry dependency. KISS/SOLID keep domain code and licence policy in their owning modules. Version 1.0.0 / API 1; local development, not yet a published release. See the contracts and verification commands above.
