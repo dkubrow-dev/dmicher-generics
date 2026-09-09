@@ -7,6 +7,8 @@ import * as components from "./components.js";
 import { createModuleRegistry } from "./registry.js";
 import { createPremiumBridge } from "./premium.js";
 import { createAppearanceController } from "./appearance.js";
+import { createInformerController } from "./chat/informer.js";
+import { createWelcomeController } from "./welcome.js";
 
 export const MODULE_ID = "dmicher-generics";
 export const API_VERSION = 1;
@@ -15,12 +17,14 @@ export const appearance = createAppearanceController({ premium, help });
 export const modules = createModuleRegistry({
   onChange: (event, record) => globalThis.Hooks?.callAll?.("dmicherModuleRegistryChanged", event, record)
 });
+export const informerController = createInformerController();
+export const welcomeController = createWelcomeController({ informer: informerController.api, premium, modules, appearance, help });
 export const api = Object.freeze({
   apiVersion: API_VERSION,
   windows: Object.freeze({ ...windows }),
   theme: Object.freeze({ ...theme }),
   utilities: Object.freeze({ ...utilities }),
-  chat: Object.freeze({ ...chat }),
+  chat: Object.freeze({ ...chat, informer: informerController.api }),
   help: Object.freeze({ ...help }),
   components: Object.freeze({ ...components }),
   appearance,

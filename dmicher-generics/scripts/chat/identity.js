@@ -145,7 +145,25 @@ export function createManagedIdentity({
     await adopt(folder);
     await adopt(actor);
     await adopt(user);
-    if (!folder && FolderClass) {
+    if (Array.isArray(config.folderPath) && config.folderPath.length && FolderClass) {
+      let parent = null;
+      for (let index = 0; index < config.folderPath.length; index++) {
+        const path = config.folderPath.slice(0, index + 1).join("/");
+        let entry = values(game.folders).find((candidate) => {
+          const marker = candidate.getFlag?.(namespace, "managedIdentityFolder") ?? candidate.flags?.[namespace]?.managedIdentityFolder;
+          return candidate.type === "Actor" && marker?.ownerId === ownerId && marker.key === key && marker.path === path;
+        });
+        const leaf = index === config.folderPath.length - 1;
+        assertLive();
+        if (!entry) entry = await FolderClass.create({ name: String(config.folderPath[index]), type: "Actor", folder: parent?.id ?? null,
+          flags: { [namespace]: { ...(leaf ? flags()[namespace] : {}), managedIdentityFolder: { ...descriptor, path } } } });
+        if (!entry) throw error("Unavailable");
+        if ((entry.folder?.id ?? entry.folder ?? null) !== (parent?.id ?? null)) await entry.update({ folder: parent?.id ?? null });
+        parent = entry;
+      }
+      folder = parent;
+      if (folder.id !== saved.folderId) await persist("folderId", folder.id);
+    } else if (!folder && FolderClass) {
       try {
         assertLive();
         folder = await FolderClass.create({ ...availableId(game.folders, saved.folderId),

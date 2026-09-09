@@ -1,6 +1,6 @@
 {
   "id": "dmicher-generics",
-  "title": "dmicher Generics | Общие инструменты",
+  "title": "dmicher 🧰 Generics | Общие инструменты",
   "description": "Shared windows, managed chat identities, addressed interactive messages, versioned module discovery and an optional Premium method bridge for dmicher modules. No game system or Premium dependency.",
   "version": "1.0.0",
   "authors": [{ "name": "dmicher abathur kubrow" }],

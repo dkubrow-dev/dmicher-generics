@@ -1,4 +1,5 @@
 import { escapeHTML } from "./utilities.js";
+import { welcomeText } from "./welcome-content.js";
 
 const words = {
   en: {
@@ -12,8 +13,8 @@ const words = {
     snapCascadeRightButton: "Move snapped windows with the right mouse button", snapCascadeRightButtonHint: "Drag the title of a snapped window with the right mouse button to move its entire connected group. A left-button drag releases only that window.",
     custom: "Custom style layer — Premium", customHint: "Import a CSS file to apply over the selected built-in style. This browser keeps the file contents when access expires.",
     import: "Import CSS", remove: "Remove imported style", available: "Your imported style is applied over the built-in style.",
-    unavailable: "Premium access for dmicher Generics is required to import and apply a custom style. Your saved style is retained.",
-    empty: "No custom style imported.", stored: "Custom style saved", save: "Save", help: "Help", helpTitle: "dmicher — Appearance help",
+    unavailable: "Premium access for dmicher 🧰 Generics is required to import and apply a custom style. Your saved style is retained.",
+    empty: "No custom style imported.", stored: "Custom style saved", save: "Save", help: "Help", helpTitle: "dmicher 🧰 Generics — Help",
     invalid: "The style could not be imported. Use a CSS file up to 64 KiB with style rules, @media or @supports, without external imports or other global rules.",
     saved: "Appearance and window behavior saved.", failed: "Unable to save appearance settings.",
     contents: "Contents", resizeNavigation: "Resize navigation", author: "Author", thanks: "Thanks", modules: "dmicher modules",
@@ -30,8 +31,8 @@ const words = {
     snapCascadeRightButton: "Перемещать прилипшие окна правой кнопкой мыши", snapCascadeRightButtonHint: "Перетащите заголовок прилипшего окна правой кнопкой, чтобы перенести весь связанный каскад. Перенос левой кнопкой отделяет только выбранное окно.",
     custom: "Свой слой стиля — Premium", customHint: "Импортируйте CSS-файл поверх выбранного встроенного стиля. Содержимое файла сохраняется в этом браузере и после окончания доступа.",
     import: "Импорт CSS", remove: "Удалить свой стиль", available: "Ваш стиль применяется поверх выбранного встроенного стиля.",
-    unavailable: "Для импорта и применения своего стиля нужен Premium-доступ к dmicher Generics. Сохранённый стиль не удаляется.",
-    empty: "Свой стиль ещё не импортирован.", stored: "Свой стиль сохранён", save: "Сохранить", help: "Справка", helpTitle: "dmicher — Справка по оформлению",
+    unavailable: "Для импорта и применения своего стиля нужен Premium-доступ к dmicher 🧰 Generics. Сохранённый стиль не удаляется.",
+    empty: "Свой стиль ещё не импортирован.", stored: "Свой стиль сохранён", save: "Сохранить", help: "Справка", helpTitle: "dmicher 🧰 Generics — Справка",
     invalid: "Не удалось импортировать стиль. Нужен CSS-файл до 64 КиБ с правилами стиля, @media или @supports, без внешних импортов и других глобальных правил.",
     saved: "Оформление и поведение окон сохранены.", failed: "Не удалось сохранить настройки оформления.",
     contents: "Содержание", resizeNavigation: "Изменить ширину меню", author: "Об авторе", thanks: "Благодарности", modules: "Модули dmicher",
@@ -44,9 +45,15 @@ export function appearanceHelpContent() {
   const t = appearanceText(), ru = globalThis.game?.i18n?.lang?.startsWith("ru");
   const p = (text) => `<p>${text}</p>`;
   const pages = [
+    { id: "welcome", title: welcomeText().name, html: p(ru
+      ? "При загрузке Информатор присылает личное приветствие: активные модули и их версии, кнопки справки и игровых настроек. Сообщение получают также игроки, вошедшие позже. Если мастер пока не подключён, приветствие придёт после его входа."
+      : "On loading, the Informer sends a private welcome listing active modules and versions, with help and game settings buttons. Players joining later receive it too. If no GM is connected, the welcome arrives after a GM joins.")
+      + `<section id="showWelcome"><h2>${escapeHTML(welcomeText().name)}</h2>${p(escapeHTML(welcomeText().hint))}</section>`
+      + p(ru ? "Мастер может выключить приветствие в настройках Foundry → dmicher 🧰 Generics. Настройка доступна без Premium. Информатор остаётся доступен для опросов, заявок и других сообщений. Его актёр находится в папке «dmicher modules → generic». Прежние служебные документы других модулей не переименовываются и не удаляются."
+        : "The GM can disable the welcome in Foundry Settings → dmicher 🧰 Generics, without Premium. The Informer remains available for polls, requests and other messages. Its actor lives in dmicher modules → generic. Previous service documents from other modules are neither renamed nor removed.") },
     { id: "appearance", title: t.basics, html: p(ru
-      ? "Откройте настройки Foundry → dmicher Generics → «Оформление и окна». Выберите встроенный стиль и сохраните. Все окна dmicher в этом браузере получат одинаковое оформление. Другие участники выбирают оформление у себя."
-      : "Open Foundry Settings → dmicher Generics → Appearance and windows. Choose a built-in style and save. All dmicher windows in this browser use it. Other participants choose their own appearance.") + p(ru
+      ? "Откройте настройки Foundry → dmicher 🧰 Generics → «Оформление и окна». Выберите встроенный стиль и сохраните. Все окна dmicher в этом браузере получат одинаковое оформление. Другие участники выбирают оформление у себя."
+      : "Open Foundry Settings → dmicher 🧰 Generics → Appearance and windows. Choose a built-in style and save. All dmicher windows in this browser use it. Other participants choose their own appearance.") + p(ru
         ? "«Сохранить» применяет изменения и оставляет окно открытым: можно сразу продолжить настройку. Закройте окно крестиком, когда закончите."
         : "Save applies your changes and leaves the window open so you can continue adjusting. Close it with the title-bar close button when finished.") },
     { id: "windows", title: t.guide, html: p(ru
@@ -69,8 +76,8 @@ export function appearanceHelpContent() {
     { id: "author", title: t.author, html: p(ru ? "dmicher — инструменты для удобного проведения настольных ролевых игр." : "dmicher creates tools for comfortable tabletop roleplaying sessions.") + '<p><a href="https://boosty.to/dmicher" target="_blank" rel="noopener noreferrer">Boosty — dmicher</a></p>' },
     { id: "thanks", title: t.thanks, html: p(ru ? "Спасибо мастерам и игрокам, которые проверяют инструменты в игре, сообщают о неудобствах и помогают сделать работу за столом проще." : "Thank you to the GMs and players who test these tools in play, report difficulties and help make sessions easier to run.") },
     { id: "modules", title: t.modules, html: p(ru ? "Подберите инструменты под свою игру. Каждый модуль отвечает за свою часть работы за столом." : "Choose the tools that fit your game. Each module supports a different part of the session.")
-      + (ru ? "<ul><li><strong>Spotlight:</strong> следите за очередью заявок и участниками, которым давно не предоставляли слово; проводите опросы и перерывы.</li><li><strong>Ширма мастера:</strong> готовьте эпизоды сцены, связывайте взаимодействия и переключайтесь к ручному управлению, когда ход игры меняется.</li><li><strong>Generics:</strong> выбирайте единый вид окон, собирайте удобное рабочее место и пользуйтесь знакомой навигацией справки.</li><li><strong>Premium:</strong> подключайте дополнительные возможности доступных модулей. Доступ настраивается в настройках Foundry → dmicher Premium.</li><li><strong>Сервер лицензий:</strong> обслуживает доступ к премиальным возможностям и выпускам; отдельное игровое окно для него не нужно.</li></ul>"
-      : "<ul><li><strong>Spotlight:</strong> manage requests, notice participants waiting for a turn, run polls and organize breaks.</li><li><strong>Master screen:</strong> prepare scene episodes, connect interactions and return to manual control when play changes direction.</li><li><strong>Generics:</strong> choose a shared window appearance, arrange your workspace and use familiar help navigation.</li><li><strong>Premium:</strong> add extra capabilities to supported modules. Configure access in Foundry Settings → dmicher Premium.</li><li><strong>Licence server:</strong> handles access to premium capabilities and releases; it needs no separate in-game window.</li></ul>") }
+      + (ru ? "<ul><li><strong>Spotlight:</strong> следите за очередью заявок и участниками, которым давно не предоставляли слово; проводите опросы и перерывы.</li><li><strong>Ширма мастера:</strong> готовьте эпизоды сцены, связывайте взаимодействия и переключайтесь к ручному управлению, когда ход игры меняется.</li><li><strong>Generics:</strong> выбирайте единый вид окон, собирайте удобное рабочее место и пользуйтесь знакомой навигацией справки.</li><li><strong>Premium:</strong> подключайте дополнительные возможности доступных модулей. Доступ настраивается в настройках Foundry → dmicher 💳 Premium.</li><li><strong>Сервер лицензий:</strong> обслуживает доступ к премиальным возможностям и выпускам; отдельное игровое окно для него не нужно.</li></ul>"
+      : "<ul><li><strong>Spotlight:</strong> manage requests, notice participants waiting for a turn, run polls and organize breaks.</li><li><strong>Master screen:</strong> prepare scene episodes, connect interactions and return to manual control when play changes direction.</li><li><strong>Generics:</strong> choose a shared window appearance, arrange your workspace and use familiar help navigation.</li><li><strong>Premium:</strong> add extra capabilities to supported modules. Configure access in Foundry Settings → dmicher 💳 Premium.</li><li><strong>Licence server:</strong> handles access to premium capabilities and releases; it needs no separate in-game window.</li></ul>") }
   ];
-  return { pages, tree: [{ id: "guide", title: t.guide, pageId: "windows", children: [{ id: "appearance", title: t.basics, pageId: "appearance" }, { id: "custom-style", title: t.layer, pageId: "custom-style" }] }, { id: "settings", title: t.settings, pageId: "settings" }], footer: ["author", "thanks", "modules"], labels: t };
+  return { pages, tree: [{ id: "welcome", title: welcomeText().name, pageId: "welcome" }, { id: "guide", title: t.guide, pageId: "windows", children: [{ id: "appearance", title: t.basics, pageId: "appearance" }, { id: "custom-style", title: t.layer, pageId: "custom-style" }] }, { id: "settings", title: t.settings, pageId: "settings" }], footer: ["author", "thanks", "modules"], labels: t };
 }

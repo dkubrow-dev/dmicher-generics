@@ -159,5 +159,19 @@ export function createPremiumBridge({
     });
   }
 
-  return Object.freeze({ apiVersion: PROTOCOL_VERSION, registerProvider, forModule });
+  return Object.freeze({ apiVersion: PROTOCOL_VERSION, registerProvider, forModule,
+    // Informational access status only: the optional provider owns every licence decision.
+    getAccessStatus(moduleId) {
+      if (!validModuleId(moduleId)) throw new TypeError("Expected a dmicher target.");
+      const record = provider;
+      let active = false;
+      try { active = Boolean(record && synchronous(record.hasAccess(moduleId)) === true && record === provider); }
+      catch { /* A failed optional status check must not claim paid access. */ }
+      return { available: Boolean(record), active };
+    },
+    waitUntilReady(timeoutMs = 50_000) {
+      if (!Number.isFinite(timeoutMs) || timeoutMs < 0) throw new TypeError("Expected a non-negative ready timeout.");
+      return provider?.wait("family-status", timeoutMs) ?? Promise.resolve();
+    }
+  });
 }

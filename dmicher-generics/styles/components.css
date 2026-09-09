@@ -4,3 +4,8 @@
 .dmicher-window .dmicher-color-controls input[type="color"] { flex: 0 0 32px; width: 32px; height: 28px; padding: 2px; }
 .dmicher-window .dmicher-json-controls { display: inline-flex; align-items: center; gap: 4px; }
 .dmicher-window .dmicher-json-controls button { width: auto; flex: 0 0 auto; }
+.dmicher-welcome button[data-dmicher-chat-action] {
+  display: inline; width: auto; min-height: 0; height: auto; margin: 0; padding: 0;
+  border: 0; background: none; color: var(--color-text-hyperlink, #c66d28); font: inherit;
+  line-height: inherit; text-decoration: underline; cursor: pointer;
+}

@@ -51,7 +51,12 @@ export function createJSONTransfer({ validate, exportValue, importValue, filenam
       if (new TextEncoder().encode(text).length > maxBytes) throw new RangeError("JSON exceeds the size limit");
       const view = document.defaultView, url = view.URL.createObjectURL(new view.Blob([text], { type: "application/json" }));
       const link = document.createElement("a"); link.href = url;
-      link.download = String(typeof filename === "function" ? filename() : filename).replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_");
+      const name = String((typeof filename === "function" ? filename() : filename) ?? "").trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").replace(/[. ]+$/, "") || "export";
+      link.download = /\.json$/i.test(name) ? name : `${name}.json`;
+      // Foundry's document hyperlink handler opens every attached anchor in a new tab,
+      // including blob URLs, and discards download metadata. Keep the browser's native
+      // download action while preventing that unrelated document-level interception.
+      link.addEventListener("click", (event) => event.stopPropagation(), { once: true });
       document.body.append(link);
       try { link.click(); } finally { link.remove(); view.setTimeout(() => view.URL.revokeObjectURL(url), 1000); }
       return text;

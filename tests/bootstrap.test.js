@@ -12,19 +12,21 @@ test("entrypoint publishes the pre-init API and consumer registry without Premiu
   let unregister;
   try {
     globalThis.Hooks = {
-      once(name, callback) { callbacks.set(name, callback); },
+      once(name, callback) { if (!callbacks.has(name)) callbacks.set(name, []); callbacks.get(name).push(callback); },
       on(name, callback) { return callback; },
       off() {},
       callAll(name, ...args) { events.push({ name, args }); }
     };
     const settings = new Map(), menus = new Map();
-    globalThis.game = { modules: new Map([[MODULE_ID, moduleRecord]]), settings: {
+    globalThis.game = { modules: new Map([[MODULE_ID, moduleRecord]]), socket: { on() {}, off() {}, emit() {} }, settings: {
       register(id, key, config) { settings.set(key, config.default); },
       registerMenu(id, key, config) { menus.set(key, config); },
       get(id, key) { return settings.get(key); },
       async set(id, key, value) { settings.set(key, value); }
     } };
-    globalThis.foundry = { applications: { api: { ApplicationV2: class {}, HandlebarsApplicationMixin: base => base } } };
+    game.user = { id: "player", role: 1, setFlag: async () => {} };
+    game.users = new Map([[game.user.id, game.user]]);
+    globalThis.foundry = { utils: { randomID: () => "testSession123" }, applications: { api: { ApplicationV2: class {}, HandlebarsApplicationMixin: base => base } } };
     const consumer = { open: () => "ready" };
     unregister = api.modules.register("dmicher-bootstrap-consumer", {
       apiVersion: 1, api: consumer, capabilities: ["open"]
@@ -32,14 +34,14 @@ test("entrypoint publishes the pre-init API and consumer registry without Premiu
     await import("../dmicher-generics/scripts/dmicher-generics.js");
     assert.equal(moduleRecord.api, undefined);
     assert.deepEqual([...callbacks.keys()], ["init"]);
-    callbacks.get("init")();
+    callbacks.get("init")[0]();
     assert.equal(moduleRecord.api, api);
     assert.equal(moduleRecord.api.modules.get("dmicher-bootstrap-consumer"), consumer);
     assert.equal(game.modules.has("dmicher-premium"), false);
     assert.equal(settings.get("snapScreen"), true);
     assert.equal(settings.get("snapWindows"), true);
     assert.equal(menus.get("appearanceSettings").restricted, false);
-    await callbacks.get("ready")();
+    for (const callback of callbacks.get("ready")) await callback();
     assert.equal(settings.get("appearanceInitialized"), true);
     const ready = events.filter(({ name }) => name === "dmicherGenericsReady");
     assert.equal(ready.length, 1);
