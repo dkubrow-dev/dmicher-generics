@@ -177,7 +177,7 @@ export function createHelpApplication({ id, title, classes = [], getContent, ini
 }
 
 /** Adds contextual help without changing a setting value or claiming its permissions. */
-export function bindSettingHelp(html, { open, entries = [] } = {}) {
+export function bindSettingHelp(html, { open, entries = [], tabIndex = 0 } = {}) {
   const root = getRenderedElement(html);
   if (!root || typeof open !== "function") return () => {};
   const created = [];
@@ -201,6 +201,7 @@ export function bindSettingHelp(html, { open, entries = [] } = {}) {
       const button = root.ownerDocument.createElement("a");
       button.href = "#";
       button.setAttribute("role", "button");
+      button.setAttribute("tabindex", tabIndex === -1 ? "-1" : "0");
       button.className = "dmicher-setting-help";
       if (control) button.classList.add("dmicher-setting-help-overlay");
       button.dataset.dmicherSettingHelp = key;

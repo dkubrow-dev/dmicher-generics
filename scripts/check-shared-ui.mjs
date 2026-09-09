@@ -104,7 +104,7 @@ try {
         fixture.innerHTML = '<fieldset disabled><label>QA setting <input type="checkbox" checked></label></fieldset>';
         const nameMatch = /name="([^"]+)"/.exec(entry.selector); fixture.querySelector("input").name = nameMatch?.[1] ?? "qa";
         document.body.append(fixture);
-        window.settingDisposer = help.bindSettingHelp(fixture, { entries: [{ ...entry, selector: "input" }], open: (...args) => currentHelp.navigate(...args) });
+        window.settingDisposer = help.bindSettingHelp(fixture, { entries: [{ ...entry, selector: "input" }], tabIndex: name === "screen" ? -1 : 0, open: (...args) => currentHelp.navigate(...args) });
         return { entry, pages: content.pages.size };
       };
       let active = false; const subscribers = new Set();
@@ -134,6 +134,7 @@ try {
         await page.evaluate(() => currentHelp.pending);
       }
       const question = page.locator(".qa-setting .dmicher-setting-help");
+      assert.equal(await question.getAttribute("tabindex"), name === "screen" ? "-1" : "0");
       assert.equal(await question.getAttribute("title"), entry.hint);
       await question.click(); await page.waitForFunction(pageId => currentHelp.activePage === pageId, entry.pageId);
       await page.evaluate(() => currentHelp.pending);
