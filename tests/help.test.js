@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { normalizeHelpContent, renderHelpLayout, clampNavigationWidth, createHelpApplication } from "../dmicher-generics/scripts/help/index.js";
 
 const content = (owner = "one") => ({
-  pages: [{ id: "start", title: `${owner} <start>`, html: '<section id="setting">Steps</section>' }, { id: "author", title: "Author", html: owner }, { id: "thanks", title: "Thanks", html: owner }, { id: "modules", title: "Premium", html: owner }],
+  pages: [{ id: "start", title: `${owner} <start>`, html: '<section id="setting">Steps</section>' }, { id: "author", title: "Author", html: owner }, { id: "thanks", title: "Thanks", html: owner }, { id: "modules", title: "Modules", html: owner }],
   tree: [{ id: "tasks", title: "Tasks", children: [{ id: "nested", title: "Nested", children: [{ id: "first", title: "Start", pageId: "start" }] }] }],
   footer: ["author", "thanks", "modules"], labels: { contents: "Contents", resizeNavigation: "Resize navigation" }
 });
@@ -27,17 +27,16 @@ test("nested tree reveals current page, escapes labels and keeps footer outside 
   assert.match(html, /<section id="setting">Steps<\/section>/);
 });
 
-test("legacy Premium footer and old deep links remain readable as the modules page", async () => {
+test("footer follows the explicit consumer contract without renaming pages or redirecting missing links", async () => {
   const old = content(); old.footer[2] = "premium"; old.pages.at(-1).id = "premium";
-  const normalized = normalizeHelpContent(old);
-  assert.deepEqual(normalized.footer, ["author", "thanks", "modules"]);
-  assert.equal(normalized.pages.get("modules").html, "one");
+  assert.throws(() => normalizeHelpContent(old), /consumer-owned/);
   class Application { async render() { return this; } bringToFront() {} }
   const previous = globalThis.foundry;
   globalThis.foundry = { applications: { api: { ApplicationV2: Application } } };
   try {
-    const Help = createHelpApplication({ id: "legacy", getContent: () => content() });
-    const help = new Help(); assert.equal(await help.navigate("premium"), true); assert.equal(help.activePage, "modules");
+    const Help = createHelpApplication({ id: "explicit-contract", getContent: () => content() });
+    const help = new Help(); assert.equal(await help.navigate("premium"), false);
+    assert.equal(await help.navigate("modules"), true); assert.equal(help.activePage, "modules");
   } finally { globalThis.foundry = previous; }
 });
 

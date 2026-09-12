@@ -58,6 +58,6 @@ The helper appends a question icon beside the setting caption. It preserves fiel
 
 For a button setting, the helper creates a small overlay at its top-left corner instead of adding a sibling to the button row. A positioning wrapper preserves the button's flex size. The question itself is a sibling of the control, not a nested interactive button; its click and pointer press never reach the underlying control. Toggle-like checkbox labels may opt in with `data-dmicher-help-overlay` or `role="button"`. Text labels retain an inline question. Question icons have no underline, including hover and inherited text styles. Disposal restores the original control location.
 
-The final footer page is `modules` and describes the suite in the consumer's own content. Existing `premium` footer definitions and `navigate("premium")` are accepted as a compatibility alias for `modules`; new content must use the new ID. No suite page content is injected by Generics.
+The final footer page is `modules` and describes the suite in the consumer's own content. Consumers declare this ID explicitly; missing pages are not renamed or redirected. No suite page content is injected by Generics.
 
 Help must be available in Russian and English, updated alongside functionality, brief and written around useful table actions. Explain important settings individually in a separate section: visible name, meaning and expected behavior. Help pages contain operating instructions; implementation and architecture belong in repository documentation such as this file.

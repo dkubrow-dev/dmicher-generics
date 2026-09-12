@@ -7,14 +7,12 @@ const identifier = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
 /** Consumer-owned, trusted help content. This API does not load or execute page scripts. */
 export function normalizeHelpContent(content) {
   const pages = new Map();
-  const legacyFooter = content?.footer?.[2] === "premium" || (!(content?.pages ?? []).some((page) => page.id === "modules") && (content?.pages ?? []).some((page) => page.id === "premium"));
-  for (const source of content?.pages ?? []) {
-    const page = legacyFooter && source.id === "premium" ? { ...source, id: "modules" } : source;
+  for (const page of content?.pages ?? []) {
     if (typeof page.id !== "string" || !identifier.test(page.id) || pages.has(page.id)) throw new Error(`Invalid or duplicate help page: ${page.id}`);
     pages.set(page.id, { ...page, title: String(page.title ?? page.id), html: String(page.html ?? "") });
   }
   if (!pages.size) throw new Error("Help requires at least one page");
-  const footer = content.footer?.map((id) => legacyFooter && id === "premium" ? "modules" : id) ?? FOOTER_IDS;
+  const footer = content.footer ?? FOOTER_IDS;
   if (!Array.isArray(footer) || footer.length !== 3 || FOOTER_IDS.some((id, index) => footer[index] !== id || !pages.has(id))) {
     throw new Error("Help requires consumer-owned author, thanks and modules footer pages");
   }
@@ -158,7 +156,6 @@ export function createHelpApplication({ id, title, classes = [], getContent, ini
 
     async navigate(pageId, anchor) {
       const content = normalizeHelpContent(await getContent());
-      if (pageId === "premium" && !content.pages.has(pageId)) pageId = "modules";
       if (!content.pages.has(pageId)) return false;
       this.activePage = pageId;
       this.pendingAnchor = typeof anchor === "string" ? anchor : null;
