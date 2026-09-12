@@ -62,6 +62,30 @@ try {
     await page.screenshot({ path: path.join(output, `spotlight-help-buttons-${version}.png`) });
     await page.evaluate(() => { helpDisposer(); }); assert.deepEqual(await page.evaluate(() => measure()), before);
     report.push({ version, test: "Real Spotlight U/I/B template: geometry, help click isolation, disabled fieldset, no underline and disposal", passed: true });
+    const tableHelp = await page.evaluate(async () => {
+      const { bindSettingHelp } = await import("/modules/dmicher-generics/scripts/help/index.js");
+      document.body.innerHTML = '<section class="dmicher-window" style="padding:20px"><table><tbody><tr id="outer-row"><th scope="row">Outer</th><td><table><tbody><tr id="parameter-row"><th scope="row">Type</th><td><span><input id="parameter-value" value="string"></span></td></tr><tr id="label-row"><th scope="row">Caption</th><td><label>Explicit label <input id="label-value" value="unchanged"></label></td></tr></tbody></table></td></tr></tbody></table></section>';
+      const root = document.querySelector("section"), entries = ["parameter-value", "label-value"].map(id => ({ selector: `#${id}`, pageId: "parameters", anchor: id, hint: "Explain parameter" }));
+      const beforeHeight = document.getElementById("parameter-row").getBoundingClientRect().height;
+      const calls = [], dispose = bindSettingHelp(root, { entries, open: (...args) => calls.push(args), tabIndex: -1 });
+      const repeat = bindSettingHelp(root, { entries, open() {} });
+      const output = {
+        ownHeader: Boolean(root.querySelector('#parameter-row > th .dmicher-setting-help')),
+        outerHeader: Boolean(root.querySelector('#outer-row > th .dmicher-setting-help')),
+        valueCell: Boolean(root.querySelector('#parameter-row > td .dmicher-setting-help')),
+        explicitLabel: Boolean(root.querySelector('#label-row label .dmicher-setting-help')),
+        questions: root.querySelectorAll('.dmicher-setting-help').length,
+        heightDelta: document.getElementById("parameter-row").getBoundingClientRect().height - beforeHeight
+      };
+      root.querySelector('#parameter-row > th .dmicher-setting-help').click();
+      output.calls = calls; output.value = document.getElementById("parameter-value").value;
+      repeat(); dispose(); output.afterDispose = root.querySelectorAll('.dmicher-setting-help').length;
+      return output;
+    });
+    assert.equal(tableHelp.ownHeader, true); assert.equal(tableHelp.outerHeader, false); assert.equal(tableHelp.valueCell, false);
+    assert.equal(tableHelp.explicitLabel, true); assert.equal(tableHelp.questions, 2); assert.equal(tableHelp.heightDelta, 0);
+    assert.deepEqual(tableHelp.calls, [["parameters", "parameter-value"]]); assert.equal(tableHelp.value, "string"); assert.equal(tableHelp.afterDispose, 0);
+    report.push({ version, test: "Nested parameter tables: own row caption, explicit label priority, unchanged row height, help click and disposal", passed: true });
     await page.evaluate(async () => {
       document.body.innerHTML = '<section class="dmicher-window" style="padding:20px"></section>';
       const components = await import("/modules/dmicher-generics/scripts/components.js");

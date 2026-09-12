@@ -185,8 +185,11 @@ export function bindSettingHelp(html, { open, entries = [], tabIndex = 0 } = {})
     for (const input of root.querySelectorAll(entry.selector)) {
       const control = input.matches('button, [role="button"], input[type="button"], input[type="submit"]') ? input
         : input.closest('label[role="button"], label[data-dmicher-help-overlay]');
+      // A parameter table labels the value through its own row header. Keep help
+      // with that caption; appending it to the value cell would add another line.
+      const rowCaption = input.closest("td")?.parentElement?.querySelector(':scope > th[scope="row"]');
       let container = control?.parentElement?.classList.contains("dmicher-setting-help-control") ? control.parentElement
-        : control ?? input.closest("label") ?? input.closest(".form-group")?.querySelector("label") ?? input.parentElement?.querySelector(":scope > label") ?? input.parentElement;
+        : control ?? input.closest("label") ?? input.closest(".form-group")?.querySelector("label") ?? input.parentElement?.querySelector(":scope > label") ?? rowCaption ?? input.parentElement;
       if (!container) continue;
       const key = `${entry.pageId}#${entry.anchor ?? ""}`;
       if ([...container.querySelectorAll("[data-dmicher-setting-help]")].some((button) => button.dataset.dmicherSettingHelp === key)) continue;
