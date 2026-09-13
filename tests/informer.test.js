@@ -44,3 +44,92 @@ test('empty private audiences and players never create informer documents or sen
   await assert.rejects(service.create({ content: 'Fake' }, { audience: { type: 'gms' } }), /Only a GM/);
   assert.equal(f.created.User.length, 0); controller.dispose();
 });
+
+for (const [language, defaultName, customName] of [['ru', 'Информатор', 'Глашатай таверны'], ['en', 'Informer', 'Tavern Herald']]) {
+  test(`${language}: actor chat names survive reconnect independently of a suffixed technical login`, async () => {
+    const f = installInformerWorld({ language });
+    const human = await CONFIG.User.documentClass.create({ _id: 'occupied', name: defaultName, role: 1 });
+    const humanActor = await CONFIG.Actor.documentClass.create({ _id: 'human-actor', name: defaultName, ownership: { default: 2 } });
+    const snapshots = [human, humanActor].map(document => JSON.stringify(document));
+    let controller = createInformerController();
+    controller.registerSettings();
+    await controller.activate();
+    const { actor, user } = controller.api.get();
+    assert.notEqual(actor.id, humanActor.id);
+    assert.equal(actor.name, defaultName);
+    assert.equal(actor.prototypeToken.name, defaultName);
+    assert.equal(user.name, `${defaultName} (2)`);
+
+    // Reproduce both correcting the old suffix and choosing a campaign-specific name.
+    await actor.update({ name: `${defaultName} (2)` });
+    for (const name of [defaultName, customName]) {
+      await actor.update({ name });
+      controller.dispose();
+      controller = createInformerController();
+      controller.registerSettings();
+      await controller.activate();
+      const service = controller.api.createMessageService({ ownerId: 'dmicher-spotlight-tools', channel: 'technical' });
+      const [message] = await service.create(({ informer }) => {
+        assert.equal(informer.actor.name, name);
+        return { content: 'Status update' };
+      }, { audience: { type: 'gms' } });
+      assert.equal(controller.api.get().actor, actor);
+      assert.equal(actor.name, name);
+      assert.equal(user.name, `${defaultName} (2)`);
+      assert.equal(message.author, user.id);
+      assert.equal(message.speaker.actor, actor.id);
+      assert.equal(message.speaker.alias, name);
+    }
+    assert.deepEqual([human, humanActor].map(document => JSON.stringify(document)), snapshots);
+    assert.equal(f.created.User.length, 2);
+    assert.equal(f.created.Actor.length, 2);
+    controller.dispose();
+  });
+
+  test(`${language}: replacing a deleted informer actor uses the default without copying the login suffix`, async () => {
+    const f = installInformerWorld({ language });
+    await CONFIG.User.documentClass.create({ _id: 'occupied', name: defaultName, role: 1 });
+    let controller = createInformerController();
+    controller.registerSettings();
+    await controller.activate();
+    const original = controller.api.get();
+    await original.actor.update({ name: `${defaultName} (2)` });
+    await original.actor.delete();
+    controller.dispose();
+    controller = createInformerController();
+    controller.registerSettings();
+    await controller.activate();
+    const restored = controller.api.get();
+    assert.notEqual(restored.actor, original.actor);
+    assert.equal(restored.actor.id, original.actor.id);
+    assert.equal(restored.actor.name, defaultName);
+    assert.equal(restored.actor.prototypeToken.name, defaultName);
+    assert.equal(restored.user, original.user);
+    assert.equal(restored.user.name, `${defaultName} (2)`);
+    assert.equal(restored.user.character, restored.actor.id);
+    assert.deepEqual(restored.actor.ownership, { default: 0 });
+    const service = controller.api.createMessageService({ ownerId: 'dmicher-master-screen', channel: 'events' });
+    const [message] = await service.create({ content: 'Status update' }, { audience: { type: 'gms' } });
+    assert.equal(message.speaker.alias, defaultName);
+    assert.equal(f.created.User.length, 2);
+    assert.equal(f.created.Actor.length, 2);
+    controller.dispose();
+  });
+}
+
+test('a locale change does not translate the GM actor name; recreation uses the active default language', async () => {
+  installInformerWorld();
+  const controller = createInformerController();
+  controller.registerSettings();
+  await controller.activate();
+  const original = controller.api.get();
+  await original.actor.update({ name: 'Town Herald' });
+  game.i18n.lang = 'ru';
+  await controller.activate();
+  assert.equal(original.actor.name, 'Town Herald');
+  await original.actor.delete();
+  await controller.activate();
+  assert.equal(controller.api.get().actor.name, 'Информатор');
+  assert.equal(controller.api.get().user.name, 'Informer');
+  controller.dispose();
+});

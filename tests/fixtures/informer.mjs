@@ -1,4 +1,4 @@
-export function installInformerWorld() {
+export function installInformerWorld({ language = 'en' } = {}) {
   let sequence = 0;
   const settings = new Map(), hooks = new Map(), created = { User: [], Actor: [], Folder: [], ChatMessage: [] };
   const makeDocument = (data, collection) => ({ ...structuredClone(data), id: data._id ?? `doc${++sequence}`,
@@ -17,7 +17,7 @@ export function installInformerWorld() {
   });
   globalThis.game = { users: new Map(), actors: new Map(), folders: new Map(), messages: new Map(),
     modules: new Map([['dmicher-generics', { id: 'dmicher-generics', active: true, title: 'dmicher Generics', version: '1.0.0' }]]),
-    i18n: { lang: 'en' }, documentTypes: { Actor: ['npc'] }, socket: { on() {}, off() {}, emit() {} },
+    i18n: { lang: language }, documentTypes: { Actor: ['npc'] }, socket: { on() {}, off() {}, emit() {} },
     settings: { register(namespace, key, config) { if (!settings.has(`${namespace}.${key}`)) settings.set(`${namespace}.${key}`, config.default); },
       get(namespace, key) { return settings.get(`${namespace}.${key}`); },
       async set(namespace, key, value) { settings.set(`${namespace}.${key}`, structuredClone(value)); } }
@@ -27,6 +27,7 @@ export function installInformerWorld() {
   globalThis.CONFIG = {};
   for (const [name, collection] of [['User', game.users], ['Actor', game.actors], ['Folder', game.folders], ['ChatMessage', game.messages]]) {
     CONFIG[name] = { documentClass: { async create(data) {
+      if (name === 'User' && [...collection.values()].some(user => user.name === data.name)) throw new Error('User name already occupied');
       const document = makeDocument(data, collection); collection.set(document.id, document); created[name].push(document); return document;
     } } };
   }

@@ -46,6 +46,8 @@ function values(collection) {
  * Owns only a hidden technical Actor, its folder and minimally privileged User.
  * Names, artwork, enablement and persistence belong to the caller. Real NPCs must
  * be passed as message speakers; they must never be provisioned through this API.
+ * defaults.name initializes the Actor; later Actor names belong to the GM.
+ * User names are independent logins and may need a world-wide unique suffix.
  * Socket requests ask the elected full GM to re-read its own configuration.
  */
 export function createManagedIdentity({
@@ -131,12 +133,14 @@ export function createManagedIdentity({
     const FolderClass = documentClass("Folder");
     if (!config || !UserClass || !ActorClass) throw error("Unavailable");
     const portrait = String(config.portrait ?? "");
-    const baseName = String(user?.name || saved.name || actor?.name || config.name || ownerId);
-    let name = baseName;
-    for (let suffix = 2; !user && values(game.users).some((entry) => entry.name === name); suffix += 1) {
-      name = `${baseName} (${suffix})`;
+    const actorDefaultName = String(config.name || ownerId);
+    const userBaseName = String(user?.name || saved.name || actor?.name || actorDefaultName);
+    let userName = userBaseName;
+    for (let suffix = 2; !user && values(game.users).some((entry) => entry.name === userName); suffix += 1) {
+      userName = `${userBaseName} (${suffix})`;
     }
-    const nextState = { ...saved, name };
+    // The persisted name restores a missing User, not the Actor's chat alias.
+    const nextState = { ...saved, name: userName };
     const persist = async (field, id) => {
       nextState[field] = id;
       assertLive();
@@ -181,14 +185,13 @@ export function createManagedIdentity({
       if (!type) throw error("ActorTypeUnavailable");
       assertLive();
       actor = await ActorClass.create({ ...availableId(game.actors, saved.actorId),
-        name, type, img: portrait, folder: folder?.id ?? null,
-        prototypeToken: { name, actorLink: true, texture: { src: portrait } },
+        name: actorDefaultName, type, img: portrait, folder: folder?.id ?? null,
+        prototypeToken: { name: actorDefaultName, actorLink: true, texture: { src: portrait } },
         ownership: { default: 0 }, flags: flags() }, { keepId: true });
       if (!actor) throw error("Unavailable");
       await persist("actorId", actor.id);
     }
     const actorChanges = {};
-    if (actor.name !== name) actorChanges.name = name;
     if (actor.img !== portrait) actorChanges.img = portrait;
     if (actor.prototypeToken?.texture?.src !== portrait) actorChanges["prototypeToken.texture.src"] = portrait;
     if (folder && (actor.folder?.id ?? actor.folder) !== folder.id) actorChanges.folder = folder.id;
@@ -203,7 +206,7 @@ export function createManagedIdentity({
     permissions.MESSAGE_WHISPER = true;
     assertLive();
     if (!user) {
-      user = await UserClass.create({ ...availableId(game.users, saved.userId), name,
+      user = await UserClass.create({ ...availableId(game.users, saved.userId), name: userName,
         ...(typeof config.password === "string" ? { password: config.password } : {}),
         role: 1, avatar: portrait, character: actor.id, permissions, flags: flags() }, { keepId: true });
       if (!user) throw error("Unavailable");

@@ -105,7 +105,7 @@ test("migrates legacy markers without replacing identifiers, name, password or u
   assert.equal(migrated.user, user);
   assert.equal(migrated.actor, actor);
   assert.equal(user.name, "Campaign Herald");
-  assert.equal(actor.name, "Campaign Herald");
+  assert.equal(actor.name, "Old Actor");
   assert.equal(user.password, "changed-by-gm");
   assert.equal(user.role, 1);
   assert.equal(actor.type, "mook");
@@ -132,6 +132,7 @@ test("foreign documents at saved IDs or the default name are never adopted, chan
   assert.notEqual(result.actor.id, actor.id);
   assert.notEqual(result.folder.id, folder.id);
   assert.equal(result.user.name, "Informer (2)");
+  assert.equal(result.actor.name, "Informer");
   setEnabled(false);
   await service.synchronize();
   assert.equal(game.users.get(user.id), user);
@@ -168,7 +169,7 @@ test("disable removes only the owned user; re-enable recovers its renamed identi
   assert.equal(restored.user.id, original.user.id);
   assert.equal(restored.user.name, "Town Crier");
   assert.equal(restored.actor, original.actor);
-  assert.equal(restored.actor.name, "Town Crier");
+  assert.equal(restored.actor.name, "Informer");
 });
 
 test("deleting a managed actor or user reconstructs only the missing document with the same ID", async () => {
