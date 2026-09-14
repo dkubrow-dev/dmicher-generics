@@ -21,17 +21,24 @@ export function createInformerController() {
     createMessageService(options) {
       const service = createMessageService(options);
       return Object.freeze({ ...service,
-        create(data, settings) {
+        create(data, settings = {}) {
           if (Number(game.user?.role) < 3) return Promise.reject(new Error("Only a GM can send an informer message."));
+          const speakerMode = settings.speakerMode ?? "informer";
+          if (!["informer", "provided"].includes(speakerMode)) return Promise.reject(new TypeError("Unknown informer speaker mode."));
           return service.create(async (context) => {
             const current = await identity.synchronize();
             if (!current?.user || !current.actor) throw new Error("The dmicher informer is unavailable.");
             const informer = { ...current, portrait: INFORMER_PORTRAIT };
             const content = typeof data === "function" ? await data({ ...context, informer }) : data;
+            if (speakerMode === "provided" && (!content?.speaker || typeof content.speaker !== "object" || Array.isArray(content.speaker))) {
+              throw new TypeError("Provided informer speaker mode requires an explicit speaker object.");
+            }
             return { ...content, author: current.user.id,
-              speaker: buildChatSpeaker({ actor: current.actor.id, alias: current.actor.name }),
+              // Attribution is explicit; delivery identity and its lifecycle
+              // remain owned by Generics even when a real scene object speaks.
+              speaker: buildChatSpeaker(speakerMode === "provided" ? content.speaker : { actor: current.actor.id, alias: current.actor.name }),
               flags: { ...content?.flags, [MODULE_ID]: { ...content?.flags?.[MODULE_ID], informer: { portrait: INFORMER_PORTRAIT } } } };
-          }, { ...settings, technical: true });
+          }, { ...settings, technical: settings.technical ?? true });
         }
       });
     }

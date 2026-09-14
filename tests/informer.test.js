@@ -45,6 +45,50 @@ test('empty private audiences and players never create informer documents or sen
   assert.equal(f.created.User.length, 0); controller.dispose();
 });
 
+test('provided NPC attribution keeps the managed informer author and ordinary chat delivery', async () => {
+  const f = installInformerWorld(), controller = createInformerController(); controller.registerSettings();
+  const npc = await CONFIG.Actor.documentClass.create({ _id: 'npc', name: 'Innkeeper', ownership: { default: 2 } });
+  const snapshot = JSON.stringify(npc);
+  const service = controller.api.createMessageService({ ownerId: 'dmicher-master-screen', channel: 'dialogues' });
+  const [message] = await service.create(({ informer }) => ({ author: f.player.id, content: '<p>Welcome</p>',
+    speaker: { actor: npc, token: 'token-npc', scene: 'scene', alias: npc.name },
+    flags: { 'dmicher-master-screen': { dialogue: { sessionId: 'session', sourceUserId: informer.user.id } } }
+  }), { speakerMode: 'provided', technical: false, audience: { type: 'users', userIds: [f.gm.id, f.player.id] }, key: 'page-1' });
+  assert.equal(message.author, controller.api.get().user.id); assert.notEqual(message.author, f.player.id);
+  assert.deepEqual(message.speaker, { actor: npc.id, token: 'token-npc', scene: 'scene', alias: npc.name });
+  assert.equal(message.getFlag('dmicher-generics', 'chat').technical, false);
+  assert.deepEqual(message.whisper, [f.gm.id, f.player.id]);
+  assert.equal(JSON.stringify(npc), snapshot, 'real NPC identity and permissions are never managed');
+  assert.equal(service.find({ key: 'page-1' })[0], message);
+  await service.update(message.id, { content: '<p>Replied</p>', moduleFlags: { dialogue: { sessionId: 'session', finished: true } } });
+  assert.equal(message.content, '<p>Replied</p>'); assert.equal(message.getFlag('dmicher-master-screen', 'dialogue').finished, true);
+  assert.equal(message.author, controller.api.get().user.id); assert.equal(message.speaker.actor, npc.id);
+  controller.dispose();
+});
+
+test('default informer attribution stays technical and cannot be replaced through message data', async () => {
+  const f = installInformerWorld(), controller = createInformerController(); controller.registerSettings();
+  const service = controller.api.createMessageService({ ownerId: 'dmicher-alpha', channel: 'events' });
+  const [message] = await service.create({ author: f.player.id, speaker: { actor: 'other', alias: 'Other' }, content: 'Notice' }, { audience: { type: 'gms' } });
+  const informer = controller.api.get();
+  assert.equal(message.author, informer.user.id); assert.equal(message.speaker.actor, informer.actor.id);
+  assert.equal(message.speaker.alias, informer.actor.name); assert.equal(message.getFlag('dmicher-generics', 'chat').technical, true);
+  controller.dispose();
+});
+
+test('provided attribution rejects missing speakers and unsupported modes instead of substituting the informer', async () => {
+  const f = installInformerWorld(), controller = createInformerController(); controller.registerSettings();
+  const service = controller.api.createMessageService({ ownerId: 'dmicher-alpha', channel: 'events' });
+  for (const speaker of [undefined, null, 'actor-id', []]) {
+    await assert.rejects(service.create({ speaker, content: 'Invalid' }, { speakerMode: 'provided', audience: { type: 'gms' } }), /explicit speaker object/);
+  }
+  await assert.rejects(service.create({ content: 'Invalid' }, { speakerMode: 'automatic', audience: { type: 'gms' } }), /speaker mode/);
+  assert.equal(f.created.ChatMessage.length, 0);
+  game.user = f.player;
+  await assert.rejects(service.create({ speaker: { alias: 'NPC' }, content: 'Invalid' }, { speakerMode: 'provided', technical: false, audience: { type: 'gms' } }), /Only a GM/);
+  controller.dispose();
+});
+
 for (const [language, defaultName, customName] of [['ru', 'Информатор', 'Глашатай таверны'], ['en', 'Informer', 'Tavern Herald']]) {
   test(`${language}: actor chat names survive reconnect independently of a suffixed technical login`, async () => {
     const f = installInformerWorld({ language });

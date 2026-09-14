@@ -2,6 +2,8 @@
 
 Начальное выделение общей инфраструктуры из Spotlight; локальная сборка для разработки комплекта.
 
+- Общий сервис Информатора поддерживает явный `speakerMode: "provided"`: настоящему персонажу можно приписать сообщение, сохраняя технического пользователя Информатора автором доставки. `technical: false` разрешает обычную реплику. Отсутствующий `speaker` не заменяется молча. Прежние вызовы, приватность и права Foundry сохраняются; версия API остаётся 1.
+
 - Потребитель справки может исключить значки вопроса из последовательной навигации Tab, сохранив подсказки и открытие мышью. Ширма включает это поведение; остальные модули сохраняют прежнюю навигацию.
 - В таблицах параметров значок справки располагается рядом с названием параметра в заголовке строки. Поле значения сохраняет компактную высоту; явные подписи и поведение кнопок остаются приоритетными.
 
@@ -32,3 +34,5 @@
 API 1 is the initial shared contract for dmicher modules. Per-consumer themes preserve existing Spotlight settings. Window helpers and local API discovery do not implement gameplay, network authority or licensing. This is a local development build, not confirmation of a public GitHub release.
 
 Informer actor names now survive reconnects and are used for new messages. Recreated actors use the localized default without copying a technical login suffix. Existing actor names are left to the GM; the change does not rename world documents or rewrite earlier messages.
+
+The informer message service now accepts explicit `speakerMode: "provided"` attribution and `technical: false` ordinary messages. The managed informer remains the author while the supplied scene character is the speaker. Missing speakers fail instead of silently changing attribution. Existing callers, Foundry permissions and API version 1 remain unchanged.

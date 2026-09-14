@@ -88,7 +88,26 @@ await notices.create({ content: "<p>Перерыв окончен</p>" }, {
 });
 ```
 
-Возвращается стандартный сервис с `create/find/get/update/remove/removeAll`. Общий автор, speaker и признак технического сообщения задаются Generics и не подменяются данными потребителя. Содержимое, категория, явная аудитория, предметные flags, ключи повторов и `enabled()` принадлежат потребителю. Пустая приватная аудитория остаётся пустой. Публикация от Информатора требует мастера или помощника; создание личности выполняет избранный полный мастер. Без подключённого полного мастера помощник может использовать уже существующую пару, но не создавать отсутствующие документы.
+Возвращается стандартный сервис с `create/find/get/update/remove/removeAll`. Автор всегда является техническим пользователем общего Информатора и не подменяется данными потребителя. По умолчанию `speakerMode: "informer"` использует Actor и имя Информатора, а `technical: true` отмечает техническое сообщение. Содержимое, категория, явная аудитория, предметные flags, ключи повторов и `enabled()` принадлежат потребителю. Пустая приватная аудитория остаётся пустой. Публикация от Информатора требует мастера или помощника; создание личности выполняет избранный полный мастер. Без подключённого полного мастера помощник может использовать уже существующую пару, но не создавать отсутствующие документы.
+
+Для обычной реплики существующего персонажа через общего отправителя явно задайте `speakerMode: "provided"` и `technical: false` в настройках конкретного `create`. В этом режиме обязателен объект `data.speaker`; отсутствие или неверный вид объекта вызывает ошибку, а не замену на Информатора. `buildChatSpeaker` нормализует его явные `scene`, `token`, `actor` и `alias` по общему договору. Он не ищет и не создаёт персонажа: существование и предметные права проверяет потребитель, затем документ проверяется Foundry. Неизвестный `speakerMode` отвергается. Опция не меняет обычные вызовы Spotlight или приветствия.
+
+```js
+const dialogue = chat.informer.createMessageService({ ownerId, channel: "dialogue" });
+const [message] = await dialogue.create({
+  speaker: { scene: scene.id, token: token.id, actor: token.actor?.id, alias: token.name },
+  content: "<p>Добро пожаловать</p>",
+  flags: { [ownerId]: { dialogue: { sessionId: "session-001", pageId: "greeting" } } }
+}, {
+  speakerMode: "provided", technical: false,
+  audience: { type: "users", userIds: [playerId, gmId] },
+  key: "session-001.greeting.private", kind: "dialogue-page"
+});
+```
+
+Даже если данные содержат `author`, публикация выше принадлежит User Информатора; `speaker` ссылается на настоящего персонажа. Права и документы этого персонажа не меняются. Для наблюдателей с другим содержимым создавайте отдельное сообщение с собственным ключом и явной аудиторией; скрытая кнопка в общем HTML не является разграничением доступа.
+
+The informer service always owns the ChatMessage author. `create(data, { speakerMode: "provided", technical: false, ...delivery })` explicitly attributes ordinary content to the supplied `data.speaker`; missing or invalid speaker objects fail rather than reverting to the informer. Existing calls retain informer attribution and technical delivery. Consumers validate the real character and determine recipients and available actions; Generics does not grant gameplay permissions.
 
 Если `data` — функция, она получает `{key, recipientId, informer: {user, actor, folder, portrait}}`. Это позволяет потребителю сохранить предметный снимок отображения, не управляя жизненным циклом. Отключение одной категории сообщений не удаляет Информатора и не влияет на другие модули. Старая низкоуровневая фабрика `createManagedIdentity` сохранена ради совместимости API; новые потребители общего Информатора используют только `chat.informer`.
 
