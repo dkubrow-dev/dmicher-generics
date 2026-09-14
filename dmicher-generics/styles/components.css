@@ -4,6 +4,18 @@
 .dmicher-window .dmicher-color-controls input[type="color"] { flex: 0 0 32px; width: 32px; height: 28px; padding: 2px; }
 .dmicher-window .dmicher-json-controls { display: inline-flex; align-items: center; gap: 4px; }
 .dmicher-window .dmicher-json-controls button { width: auto; flex: 0 0 auto; }
+/* Shared by Spotlight and Master screen; the label marks a feature, not access. */
+.dmicher-premium-badge {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 0.4rem;
+  color: var(--dmicher-text-muted, var(--color-text-secondary, currentColor));
+  font-size: 0.72em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
 .dmicher-welcome button[data-dmicher-chat-action] {
   display: inline; width: auto; min-height: 0; height: auto; margin: 0; padding: 0;
   border: 0; background: none; color: var(--color-text-hyperlink, #c66d28); font: inherit;
